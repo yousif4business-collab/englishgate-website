@@ -1,0 +1,39 @@
+# S48 — CACHE-POISON CLASS KILL.
+#
+# The rule below MUST stay above the SPA catch-all. Without it, a request for a
+# hashed asset that has not yet propagated to an edge node falls through to
+# `/* -> /index.html 200`, and the browser caches the HTML SHELL under an asset
+# URL. Because /assets/* is `max-age=31536000, immutable`, that entry lives for
+# a YEAR and no later deploy dislodges it — the URL is content-hashed and is
+# never re-requested with different content. That is exactly how the site came
+# to render unstyled with a correct file sitting at the origin (audit A-01/A-02).
+#
+# A 404 is the honest answer for a missing asset: it is not cached AS the asset,
+# it self-heals the moment the file propagates, and a stylesheet that 404s fails
+# loudly instead of silently poisoning a year of caches.
+#
+# Ordering is the whole mechanism — never move this below the catch-all.
+#
+# S49 FINDING — PROVEN, DO NOT RE-ATTEMPT WITHOUT NEW EVIDENCE:
+# this rule DOES NOT FIRE on Cloudflare Pages. Tested twice against production
+# with a real 33-byte destination — as a directory (/_asset-missing) and as an
+# explicit file (/_asset-missing/index.html). Both times /assets/fake.css still
+# returned 200 with the SPA shell. Pages appears to resolve an unmatched path
+# through the catch-all regardless of an earlier splat rule's 404 status.
+#
+# The ONLY mechanism that makes /assets/* misses 404 on Pages is a top-level
+# 404.html — and that file outranks the SPA catch-all and 404s all 14 routes
+# (proven the hard way, S48/S48c). So the two cannot coexist via _redirects,
+# and the SPA wins. A-02 stays OPEN and is watched by the post-deploy gate,
+# which RECORDS the asset-miss status every run. Closing it needs a Pages
+# Function (functions/assets/[[path]].js) — a different mechanism, not a rule.
+#
+# S48c: the destination must NOT be /404.html. Cloudflare Pages treats a
+# top-level 404.html as its built-in custom-404 handler, which OUTRANKS the SPA
+# catch-all below — shipping that file 404'd every client-side route (13 of 14)
+# while only "/" survived. The destination here does not need to exist: Pages
+# returns its own 404 body, and nothing has to render at it.
+/assets/*   /_asset-missing/index.html   404
+
+# SPA: every other unmatched path is a client-side route.
+/*    /index.html   200

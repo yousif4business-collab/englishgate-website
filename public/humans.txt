@@ -1,0 +1,9 @@
+/* TEAM */
+Site: English Gate Academy — Baghdad, Adhamiya
+Contact: https://wa.me/9647717485887
+
+/* SITE */
+Language: English / العربية
+Doctype: HTML5
+Standards: React 19, Vite, Tailwind CSS 4
+Hosting: Cloudflare Pages

@@ -1,0 +1,6 @@
+# Security policy for englishgate-school.com (English Gate Academy, Baghdad)
+# Please report vulnerabilities responsibly — reception monitors this channel.
+Contact: https://wa.me/9647717485887
+Expires: 2027-07-07T00:00:00.000Z
+Preferred-Languages: en, ar
+Canonical: https://englishgate-school.com/.well-known/security.txt

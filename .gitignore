@@ -1,0 +1,60 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# QA artifacts (regenerable via qa/matrix.mjs / lighthouse)
+qa/screens/
+qa/lh-*.json
+
+# WebKit QA artifacts (regenerable via qa/webkit-iphone.mjs)
+qa/webkit-iphone/
+qa/qi-card/
+qa/security/shots/
+qa/intro-v2/
+qa/intro-v3/
+
+# Local Netlify folder
+.netlify
+
+# Secrets & local agent state — never commit
+.env
+.env.*
+.claude/
+qa/s10/
+qa/s11/
+qa/s13/
+
+# Raw staff-photo intake (S14) — originals stay local; the optimized webp
+# pipeline output in public/staff/ is what ships and is committed.
+incoming-staff-photos/
+public/videos/_originals/
+# S38: same rule for the live intake folder the director drops photos into —
+# full-res headshots + raw classroom shots (~41 MB). It is also in
+# NEVER_PUBLISH (vite.config.js) so it never reaches the CDN. Picks that go
+# live are re-cut into tracked paths: public/staff/ and public/images/sessions/.
+public/staff/incoming/
+# S38l: video intake. Finals are re-encoded into public/videos/<slug>.mp4 and
+# committed; raw camera masters and anything dropped here stay local, exactly
+# like videos/_originals above. Also in NEVER_PUBLISH (vite.config.js).
+public/videos/_incoming/

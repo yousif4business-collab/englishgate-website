@@ -1,0 +1,17 @@
+# Netlify MIRROR of englishgate-school.com — resilience failover only.
+# Same repo, same build output as Cloudflare Pages; deployed pre-built via
+# `npm run deploy:all` (netlify-cli --dir=dist). NEVER a separate codebase.
+#
+# The mirror must never be indexed: X-Robots-Tag below + the canonical tags
+# in index.html already point at https://englishgate-school.com.
+# Security headers come from public/_headers (same convention on Netlify) —
+# CSP stays identical on both hosts; only the noindex rule is mirror-specific.
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"

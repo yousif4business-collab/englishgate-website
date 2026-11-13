@@ -1,0 +1,41 @@
+{
+  "name": "englishgate-site",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "qa:security": "npm run build && node qa/security/run.mjs",
+    "deploy:all": "npm run deploy",
+    "gate": "node qa/post-deploy-gate.mjs",
+    "gate:wait": "npm run gate:deploy",
+    "mirror:check": "node qa/mirror-check.mjs",
+    "deploy:mirror": "zsh -c 'source ~/.zshrc >/dev/null 2>&1 && npx netlify-cli deploy --prod --dir=dist' && node qa/mirror-check.mjs || { echo \"\"; echo \"!!! MIRROR STEP FAILED !!!\"; echo \"!!! Production IS deployed and gated — it is the MIRROR that is stale. !!!\"; echo \"!!! Re-run: npm run deploy:mirror   (does not touch production) !!!\"; exit 1; }",
+    "deploy": "npm run build && npx wrangler pages deploy dist --project-name=englishgate-site --branch=main && npm run gate:deploy && npm run deploy:mirror",
+    "gate:deploy": "node qa/post-deploy-gate.mjs --expect dist/index.html || { echo \"\"; echo \"!!! POST-DEPLOY GATE FAILED — THE DEPLOY IS NOT DONE !!!\"; echo \"!!! Fix production or roll back. Do NOT edit the gate. !!!\"; exit 1; }"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^8.3.0"
+  },
+  "devDependencies": {
+    "@fontsource/cairo": "^5.2.7",
+    "@fontsource/fraunces": "^5.2.9",
+    "@fontsource/nunito": "^5.2.7",
+    "@napi-rs/canvas": "^1.0.2",
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "oxlint": "^1.71.0",
+    "playwright-core": "^1.61.1",
+    "sharp": "^0.35.3",
+    "tailwindcss": "^4.3.2",
+    "vite": "^8.1.1"
+  }
+}

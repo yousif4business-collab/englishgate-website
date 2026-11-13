@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# answer engines and AI assistants are welcome; the plain facts are in /llms.txt
+User-agent: GPTBot
+Allow: /
+User-agent: ClaudeBot
+Allow: /
+User-agent: PerplexityBot
+Allow: /
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://englishgate-school.com/sitemap.xml

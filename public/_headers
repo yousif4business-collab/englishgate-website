@@ -1,0 +1,90 @@
+# Security headers — continuously verified by `npm run qa:security` (qa/security/)
+# and .github/workflows/security.yml. Change a header here → update the expected
+# values in qa/security/run.mjs in the same commit, or CI goes red.
+#
+# Deliberate choices (do not "fix" without reading):
+# - style-src keeps 'unsafe-inline': React style={{...}} attributes (animation
+#   delays, parallax, aspect ratios) are used throughout and are governed by
+#   style-src — removing it blanks large parts of the site. Revisit only via
+#   style-src-attr with a full 3-engine verify.
+# - frame-src was REMOVED (S25 audit fix #4): the contact map has been bundled
+#   Leaflet + OSM since S16 and no Google iframe exists — frames now fall back
+#   to default-src 'self'. YouTube origins were removed 2026-07-07.
+# - fonts are self-hosted since S25 (public/fonts/) — fonts.googleapis.com /
+#   fonts.gstatic.com are gone from style-src/font-src.
+# - media-src 'self' (S26): videos were previously allowed via the default-src
+#   fallback; now EXPLICIT so a future default-src edit can never silently
+#   break playback. No blob:/mediastream: — all videos are static self-hosted
+#   files (VideoFrame uses plain /videos/*.mp4 src, no MediaSource). The
+#   qa/security video-under-CSP guard fails the build if media ever breaks.
+# - img-src includes tile.openstreetmap.org: the S16 contact map's tile host
+#   (images only — no script/connect surface). Update qa/security/run.mjs in
+#   lockstep if this changes.
+# - NO Cross-Origin-Embedder-Policy on purpose — it would break the Maps iframe.
+# - NO hotlink protection anywhere — it would break OG-image previews on
+#   WhatsApp/social. Cross-Origin-Resource-Policy: same-origin (S27) is safe
+#   alongside this: CORP is enforced only by BROWSERS embedding our resources
+#   cross-origin; WhatsApp/social preview crawlers fetch server-side and
+#   ignore it, so OG previews keep working.
+# - HSTS 'preload' is deliberately NOT set: preload is a browser-shipped,
+#   hard-to-reverse commitment for the whole domain and all subdomains, and we
+#   have not submitted to hstspreload.org. If that decision is ever made, use:
+#   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+# - geolocation=(self) (S21): the contact/home "nearest branch" button calls
+#   the Geolocation API on tap only; the position is used on-device to rank
+#   the three branches and is never stored or transmitted.
+# - script-src carries one hash (S35-FONTS): the intro-pending gate script,
+#   inlined into index.html to drop a render-blocking request. A hash is a
+#   targeted allowlist entry for that ONE exact script body — NOT the same as
+#   'unsafe-inline', which would allow any inline script. If you edit that
+#   <script> block in index.html, recompute its sha256 and update BOTH here
+#   and qa/security/run.mjs's expectCsp in the same commit.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com 'sha256-IS0e94fpmBPckSIP5VCa7hb8mok6sP5VChuz/aB34E0='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; media-src 'self'; connect-src 'self' https://static.cloudflareinsights.com https://cloudflareinsights.com https://qzwrflxhcumnwcramrdy.supabase.co; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+# Video streaming (S27 audit fix): players must see byte-range support
+# advertised before they stream — the gap read as "frozen video" on cellular.
+# Live behavior differs per host (verified 2026-07-13):
+# - Netlify: this rule puts `Accept-Ranges: bytes` on every /videos/
+#   response, including 206s. ✓
+# - Cloudflare: the EDGE does the range slicing and owns Accept-Ranges on
+#   206s — it STRIPS this custom header there (CORP from /* survives, so the
+#   rule engine itself works). The plain 200 carries `accept-ranges: bytes`
+#   (CF adds it), and a Range probe gets a proper 206 + Content-Range, which
+#   per RFC 9110 is itself the definitive range-support signal — both
+#   first-touch paths advertise correctly. qa/security/run.mjs asserts
+#   exactly that shape; don't "fix" it to demand Accept-Ranges on CF 206s.
+# HSTS/CSP/CORP already reach these responses via the /* block above (all
+# matching rules combine on both Cloudflare Pages and Netlify).
+/videos/*
+  Accept-Ranges: bytes
+  # S38l: videos are content-addressed by NAME (a re-cut ships under a new
+  # slug), never mutated in place, so they cache like the other static media.
+  # Without this they fell back to the host default and were re-fetched far
+  # more often than needed — costly for 2-4 MB clips on cellular.
+  Cache-Control: public, max-age=31536000, immutable
+
+# Hashed build assets never change — cache them hard.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Self-hosted font files (S25) — pinned upstream releases, safe to cache hard.
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# HTML shell must always revalidate so every visitor sees the newest deploy.
+/
+  Cache-Control: no-cache, must-revalidate
+
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/*.html
+  Cache-Control: no-cache, must-revalidate

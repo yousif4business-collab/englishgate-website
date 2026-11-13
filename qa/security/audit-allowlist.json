@@ -1,0 +1,19 @@
+{
+  "_readme": [
+    "Documented, TEMPORARY acceptances for `npm audit --omit=dev`, consumed by",
+    "qa/security/audit-gate.mjs (wired into the security workflow).",
+    "",
+    "This file can ONLY silence the exact advisory IDs listed below. Any other",
+    "high or critical advisory still fails CI — that is the whole point, and it",
+    "is why the audit level was NOT relaxed and no --force downgrade was run.",
+    "",
+    "Every entry MUST carry: the written basis for acceptance, the date it was",
+    "accepted, and an expiry. Past its expiry an entry still suppresses the",
+    "failure, but the gate prints a loud EXPIRED warning on every run so an",
+    "acceptance cannot quietly become permanent.",
+    "",
+    "STANDING RULE: when a patched version lands (Dependabot will knock),",
+    "remove the entry in the SAME pull request that bumps the dependency."
+  ],
+  "allow": []
+}

@@ -1,0 +1,54 @@
+# Continuous security verification — every push + weekly.
+# Red build blocks merge. Full 3-engine matrix runs locally via
+# `npm run qa:security`; CI runs the chromium-only mode (same checks).
+#
+# ┌── EXPIRING ACCEPTANCE — REVIEW BY 2026-08-15 ─────────────────────────────┐
+# │ GHSA-qwww-vcr4-c8h2 (react-router, high) is TEMPORARILY accepted, by      │
+# │ owner ruling on 2026-07-28: the advisory is scoped to RSC mode /          │
+# │ server-action handling, and this app mounts a client-side <BrowserRouter> │
+# │ and ships as static dist/ on a CDN with no server runtime, so the         │
+# │ vulnerable path does not execute.                                         │
+# │                                                                           │
+# │ It is suppressed BY ID ONLY, in qa/security/audit-allowlist.json. The     │
+# │ audit still runs in full and any OTHER high/critical advisory still fails │
+# │ this workflow — the audit level was NOT relaxed and no --force downgrade  │
+# │ was applied. After 2026-08-15 the gate prints a loud EXPIRED warning on   │
+# │ every run (it does not start failing), so this cannot go unnoticed.       │
+# │                                                                           │
+# │ STANDING RULE: when a patched react-router 7.x lands, delete the          │
+# │ allowlist entry in the SAME PR that bumps the dependency.                 │
+# └───────────────────────────────────────────────────────────────────────────┘
+name: security
+on:
+  push:
+  schedule:
+    - cron: '0 4 * * 1' # Mondays 04:00 UTC — catches new advisories & header drift
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Runs the SAME `npm audit --omit=dev`, then fails on any high/critical
+      # advisory that is not a documented, dated acceptance. See the banner at
+      # the top of this file and qa/security/audit-allowlist.json.
+      - name: npm audit (production deps, documented acceptances only)
+        run: node qa/security/audit-gate.mjs
+      - name: Build
+        run: npm run build
+      - name: Install chromium for browser checks
+        run: npx playwright-core install --with-deps chromium
+      - name: Security QA (headers + secrets + links + CSP sweep + scanner)
+        run: node qa/security/run.mjs --ci
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: security-report
+          path: |
+            qa/security/REPORT.md
+            qa/security/shots/
